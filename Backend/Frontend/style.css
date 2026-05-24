@@ -1,0 +1,444 @@
+/* ===== Анимация появления карточек ===== */
+.custom-card {
+    animation: fadeIn 0.35s ease-out forwards;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ===== Тосты ===== */
+.animate-fade-in {
+    animation: toastIn 0.25s ease-out forwards;
+}
+
+@keyframes toastIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ===== Кастомный скроллбар ===== */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f5f9;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+
+textarea {
+    resize: vertical;
+}
+
+#chat-messages > div.bg-indigo-600 {
+    align-self: flex-end;
+    margin-left: auto;
+    max-width: 85%;
+    width: fit-content;
+}
+
+/* =====================================================================
+   КАРТОЧКИ ГРАФИКОВ С BLOOM-ЭФФЕКТОМ
+   ===================================================================== */
+.chart-card {
+    transition: transform 0.35s cubic-bezier(.2,.8,.2,1), box-shadow 0.35s ease;
+    will-change: transform;
+}
+
+.chart-card:hover {
+    transform: translateY(-4px) scale(1.01);
+    box-shadow: 0 20px 40px -12px rgba(99, 102, 241, 0.25),
+                0 0 0 1px rgba(99, 102, 241, 0.15);
+}
+
+.bloom {
+    position: absolute;
+    width: 360px;
+    height: 360px;
+    border-radius: 50%;
+    filter: blur(80px);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.5s ease, transform 0.6s cubic-bezier(.2,.8,.2,1);
+    transform: translate(-50%, -50%) scale(0.8);
+    top: 50%;
+    left: 50%;
+    z-index: 0;
+}
+
+.chart-card:hover .bloom {
+    opacity: 0.65;
+    transform: translate(-50%, -50%) scale(1.1);
+    animation: bloomPulse 2.4s ease-in-out infinite;
+}
+
+.bloom-indigo { background: radial-gradient(circle, #818cf8 0%, transparent 70%); }
+.bloom-pink   { background: radial-gradient(circle, #f472b6 0%, transparent 70%); }
+.bloom-amber  { background: radial-gradient(circle, #fbbf24 0%, transparent 70%); }
+
+@keyframes bloomPulse {
+    0%, 100% { transform: translate(-50%, -50%) scale(1.1); opacity: 0.55; }
+    50%      { transform: translate(-50%, -50%) scale(1.25); opacity: 0.8; }
+}
+
+/* Подписи внутри карточек */
+.chart-tooltip {
+    position: absolute;
+    bottom: 12px;
+    left: 50%;
+    transform: translateX(-50%) translateY(8px);
+    background: rgba(17, 24, 39, 0.92);
+    color: #f9fafb;
+    font-size: 11px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    z-index: 5;
+    white-space: nowrap;
+}
+
+.chart-card:hover .chart-tooltip {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+
+/* Покачивание иконки в шапке карточки при ховере */
+.chart-card .group-hover\:rotate-12,
+.chart-card .group-hover\:scale-110,
+.chart-card .group-hover\:translate-x-1 {
+    transition: transform 0.4s cubic-bezier(.2,.8,.2,1);
+}
+
+/* =====================================================================
+   HEATMAP ДОСТУПНОСТИ
+   ===================================================================== */
+.heatmap {
+    display: grid;
+    gap: 4px;
+    min-width: 720px;
+}
+
+.heatmap-row {
+    display: grid;
+    gap: 4px;
+    align-items: center;
+}
+
+.heatmap-name {
+    font-size: 12px;
+    color: #374151;
+    padding-right: 8px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.heatmap-name .tz {
+    color: #9ca3af;
+    font-size: 10px;
+    margin-left: 4px;
+}
+
+.heatmap-cell {
+    height: 32px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+    cursor: default;
+    position: relative;
+}
+
+.heatmap-cell:hover {
+    transform: scale(1.08);
+    z-index: 4;
+    box-shadow: 0 4px 14px -4px rgba(0,0,0,0.18);
+    filter: brightness(1.05);
+}
+
+.cell-free     { background: #d1fae5; }
+.cell-busy     { background: #d1d5db; }
+.cell-vacation { background: #fef3c7; color: #b45309; }
+.cell-off      { background: #f3f4f6; color: #9ca3af; }
+
+.cell-vacation i { font-size: 13px; }
+
+/* Колонка времени сверху */
+.heatmap-hour {
+    font-size: 10px;
+    color: #6b7280;
+    text-align: center;
+    padding-bottom: 2px;
+}
+
+/* Командная строка */
+.heatmap-team {
+    height: 36px;
+    border-radius: 8px;
+    background: #f3f4f6;
+    color: #6b7280;
+    font-size: 11px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+.heatmap-team.team-on {
+    background: linear-gradient(135deg, #34d399 0%, #10b981 100%);
+    color: #ecfdf5;
+    box-shadow: 0 0 18px rgba(16, 185, 129, 0.55);
+    animation: teamGlow 2s ease-in-out infinite;
+}
+
+@keyframes teamGlow {
+    0%, 100% { box-shadow: 0 0 14px rgba(16, 185, 129, 0.45); }
+    50%      { box-shadow: 0 0 28px rgba(16, 185, 129, 0.85); }
+}
+
+/* Легенда */
+.legend-cell {
+    width: 14px;
+    height: 14px;
+    border-radius: 4px;
+    display: inline-block;
+}
+
+.legend-free     { background: #d1fae5; }
+.legend-busy     { background: #d1d5db; }
+.legend-vacation { background: #fef3c7; }
+.legend-off      { background: #f3f4f6; border: 1px solid #e5e7eb; }
+.legend-team     { background: linear-gradient(135deg, #34d399 0%, #10b981 100%); }
+
+/* =====================================================================
+   ПРОФИЛЬ СОТРУДНИКА
+   ===================================================================== */
+.profile-avatar {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #818cf8 0%, #6366f1 100%);
+    color: #fff;
+    font-weight: 700;
+    font-size: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 8px 24px -8px rgba(99, 102, 241, 0.55);
+    flex-shrink: 0;
+}
+
+/* Stacked bar активности */
+.activity-bar {
+    display: flex;
+    width: 100%;
+    height: 18px;
+    border-radius: 999px;
+    overflow: hidden;
+    background: #f3f4f6;
+    box-shadow: inset 0 1px 2px rgba(0,0,0,0.06);
+}
+
+.activity-seg {
+    height: 100%;
+    transition: filter 0.2s ease, transform 0.2s ease;
+    cursor: default;
+}
+.activity-seg:hover { filter: brightness(1.08); transform: scaleY(1.1); }
+
+.legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+/* Timeline истории графика */
+.timeline {
+    position: relative;
+    padding-left: 22px;
+    list-style: none;
+    margin: 0;
+}
+.timeline::before {
+    content: '';
+    position: absolute;
+    left: 9px;
+    top: 4px;
+    bottom: 4px;
+    width: 2px;
+    background: linear-gradient(180deg, #c7d2fe, #e0e7ff 60%, transparent);
+}
+.timeline-item {
+    position: relative;
+    padding: 6px 0 14px 0;
+    display: flex;
+    gap: 10px;
+}
+.timeline-dot {
+    position: absolute;
+    left: -22px;
+    top: 6px;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: #fff;
+    border: 2px solid #6366f1;
+    color: #6366f1;
+    font-size: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 0 4px #eef2ff;
+}
+.timeline-item > div { padding-left: 6px; }
+
+/* Карточка сотрудника — лёгкий hover */
+.employee-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+.employee-card:hover {
+    transform: translateY(-2px);
+    border-color: #c7d2fe;
+    box-shadow: 0 12px 24px -16px rgba(99,102,241,0.45);
+}
+
+/* =====================================================================
+   ПЛИТКА КОМАНДЫ + ЯЧЕЙКА БОЛЬНИЧНОГО
+   ===================================================================== */
+.team-tile-icon {
+    width: 52px;
+    height: 52px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, #6366f1 0%, #818cf8 100%);
+    color: #fff;
+    font-size: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 8px 22px -10px rgba(99, 102, 241, 0.65);
+    flex-shrink: 0;
+}
+
+.cell-sick      { background: #ffe4e6; color: #be123c; }
+.legend-sick    { background: #ffe4e6; }
+
+/* =====================================================================
+   QUICK EVENT POPOVER + AI BADGE + TASK INLINE EDITOR
+   ===================================================================== */
+.quick-event-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 10px 8px;
+    border-radius: 10px;
+    border: 1px solid #e5e7eb;
+    background: linear-gradient(180deg, #fff, #f9fafb);
+    color: #374151;
+    font-size: 12px;
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+.quick-event-btn:hover {
+    transform: translateY(-2px);
+    border-color: #c7d2fe;
+    box-shadow: 0 8px 18px -10px rgba(99,102,241,0.45);
+    color: #4f46e5;
+}
+.quick-event-btn i { font-size: 18px; }
+
+#ai-provider-badge {
+    transition: background 0.3s ease, color 0.3s ease;
+}
+#ai-provider-badge.online {
+    background: #d1fae5;
+    color: #047857;
+}
+#ai-provider-badge.online #ai-status-dot { background: #10b981; box-shadow: 0 0 0 3px rgba(16,185,129,0.18); }
+#ai-provider-badge.offline {
+    background: #fee2e2;
+    color: #b91c1c;
+}
+#ai-provider-badge.offline #ai-status-dot { background: #ef4444; }
+
+.task-inline {
+    background: #eef2ff;
+    border: 1px solid #c7d2fe;
+    border-radius: 10px;
+    padding: 8px 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: #3730a3;
+}
+.task-inline .task-text { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.task-inline .task-edit-btn {
+    background: transparent;
+    border: 0;
+    color: #6366f1;
+    cursor: pointer;
+    transition: transform 0.15s ease, color 0.15s ease;
+}
+.task-inline .task-edit-btn:hover { color: #4338ca; transform: scale(1.1); }
+
+.task-input {
+    flex: 1;
+    border: 1px solid #c7d2fe;
+    border-radius: 6px;
+    padding: 4px 8px;
+    font-size: 13px;
+    outline: none;
+    background: #fff;
+}
+.task-actions { display: flex; gap: 4px; }
+.task-actions button {
+    border: 0;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 12px;
+}
+.task-actions .task-save  { background: #4f46e5; color: #fff; }
+.task-actions .task-save:hover  { background: #4338ca; }
+.task-actions .task-cancel { background: #e5e7eb; color: #374151; }
+.task-actions .task-cancel:hover { background: #d1d5db; }
+
+/* Кнопка освобождения внутри карточки сотрудника */
+.btn-release {
+    background: transparent;
+    border: 1px dashed #fbbf24;
+    color: #b45309;
+    border-radius: 999px;
+    padding: 4px 10px;
+    font-size: 11px;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+.btn-release:hover {
+    background: #fef3c7;
+    color: #92400e;
+    border-color: #f59e0b;
+}
+
+/* Кликабельные ячейки heatmap */
+.heatmap-cell { cursor: pointer; }
+.heatmap-hour { cursor: pointer; }
+.heatmap-hour:hover { color: #4f46e5; }

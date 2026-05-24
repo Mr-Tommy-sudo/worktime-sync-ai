@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WorkTime Sync — HR Dashboard</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+    <link rel="stylesheet" href="style.css">
+    <script src="script.js" defer></script>
+</head>
+<body class="bg-gray-50 font-sans text-gray-800">
+
+    <!-- ========== Шапка ========== -->
+    <nav class="bg-white shadow-sm mb-6 border-b border-gray-200 sticky top-0 z-30">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap justify-between items-center gap-3">
+            <div class="flex items-center gap-2">
+                <i class="fa-solid fa-clock text-indigo-600 text-xl"></i>
+                <h1 class="text-xl font-bold text-gray-800">WorkTime Sync</h1>
+                <span class="text-xs text-gray-400 ml-2 hidden md:inline">HR Dashboard · MVP</span>
+            </div>
+
+            <div class="flex flex-wrap items-center gap-2">
+                <label class="text-xs text-gray-500">Команда:</label>
+                <select id="team-selector"
+                    class="text-sm border border-gray-300 rounded px-2 py-1.5 bg-white focus:outline-none focus:border-indigo-500">
+                    <option value="">Загрузка...</option>
+                </select>
+
+                <button id="btn-create-team"
+                    class="text-sm bg-white border border-gray-300 text-gray-700 px-3 py-1.5 rounded hover:bg-gray-50 transition" title="Создать команду">
+                    <i class="fa-solid fa-people-group mr-1"></i> Создать команду
+                </button>
+                <button id="btn-add-employee"
+                    class="text-sm bg-white border border-gray-300 text-gray-700 px-3 py-1.5 rounded hover:bg-gray-50 transition">
+                    <i class="fa-solid fa-user-plus mr-1"></i> Добавить сотрудника
+                </button>
+                <button id="btn-random-employee"
+                    class="text-sm bg-emerald-50 text-emerald-700 px-3 py-1.5 rounded hover:bg-emerald-100 transition" title="Создать сотрудника со случайными данными">
+                    <i class="fa-solid fa-dice mr-1"></i> Случайный сотрудник
+                </button>
+                <button id="btn-add-event"
+                    class="text-sm bg-white border border-gray-300 text-gray-700 px-3 py-1.5 rounded hover:bg-gray-50 transition">
+                    <i class="fa-solid fa-calendar-plus mr-1"></i> Событие
+                </button>
+                <button id="btn-generate-data"
+                    class="text-sm bg-indigo-50 text-indigo-600 px-3 py-1.5 rounded hover:bg-indigo-100 transition">
+                    <i class="fa-solid fa-database mr-1"></i> Тестовые данные
+                </button>
+                <button id="btn-refresh"
+                    class="text-sm bg-white border border-gray-300 text-gray-600 px-2.5 py-1.5 rounded hover:bg-gray-50 transition" title="Обновить">
+                    <i class="fa-solid fa-rotate"></i>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto px-4 pb-10">
+
+        <!-- ========== HR KPI ========== -->
+        <section class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6" id="hr-kpi">
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+                <div class="text-xs text-gray-500 uppercase">Сотрудников</div>
+                <div class="text-2xl font-bold text-gray-800" id="kpi-total">—</div>
+                <div class="text-xs text-gray-400 mt-1" id="kpi-total-sub">в команде</div>
+            </div>
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+                <div class="text-xs text-gray-500 uppercase">Средний риск</div>
+                <div class="text-2xl font-bold text-indigo-600" id="kpi-avg-risk">—</div>
+                <div class="text-xs text-gray-400 mt-1">показатель R̄</div>
+            </div>
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+                <div class="text-xs text-gray-500 uppercase">Высокий риск</div>
+                <div class="text-2xl font-bold text-red-600" id="kpi-high-risk">—</div>
+                <div class="text-xs text-gray-400 mt-1">сотрудников</div>
+            </div>
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+                <div class="text-xs text-gray-500 uppercase">Устаревший график</div>
+                <div class="text-2xl font-bold text-orange-600" id="kpi-stale">—</div>
+                <div class="text-xs text-gray-400 mt-1">не обновляли &gt;30 дней</div>
+            </div>
+        </section>
+
+        <!-- ========== Графики ========== -->
+        <section class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+            <div class="chart-card group bg-white rounded-xl shadow-sm border border-gray-100 p-5 relative overflow-hidden cursor-pointer">
+                <div class="bloom bloom-indigo"></div>
+                <h3 class="text-sm font-semibold mb-3 text-gray-700 relative z-10 flex items-center gap-2">
+                    <i class="fa-solid fa-chart-pie text-indigo-500 group-hover:rotate-12 transition-transform"></i>
+                    Распределение по риску
+                </h3>
+                <div class="relative z-10"><canvas id="chart-risk" height="180"></canvas></div>
+                <div class="chart-tooltip" id="risk-tooltip">Наведите на сегмент</div>
+            </div>
+            <div class="chart-card group bg-white rounded-xl shadow-sm border border-gray-100 p-5 relative overflow-hidden cursor-pointer">
+                <div class="bloom bloom-pink"></div>
+                <h3 class="text-sm font-semibold mb-3 text-gray-700 relative z-10 flex items-center gap-2">
+                    <i class="fa-solid fa-laptop-house text-pink-500 group-hover:scale-110 transition-transform"></i>
+                    Формат работы
+                </h3>
+                <div class="relative z-10"><canvas id="chart-format" height="180"></canvas></div>
+                <div class="chart-tooltip" id="format-tooltip">Наведите на сегмент</div>
+            </div>
+            <div class="chart-card group bg-white rounded-xl shadow-sm border border-gray-100 p-5 relative overflow-hidden">
+                <div class="bloom bloom-amber"></div>
+                <h3 class="text-sm font-semibold mb-3 text-gray-700 relative z-10 flex items-center gap-2">
+                    <i class="fa-solid fa-gauge-high text-amber-500 group-hover:translate-x-1 transition-transform"></i>
+                    Загрузка сотрудников (L)
+                </h3>
+                <div class="relative z-10"><canvas id="chart-load" height="180"></canvas></div>
+            </div>
+        </section>
+
+        <!-- ========== Карта доступности (Heatmap) ========== -->
+        <section class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 mb-6">
+            <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+                <h3 class="text-md font-semibold text-gray-700 flex items-center gap-2">
+                    <i class="fa-solid fa-table-cells-large text-indigo-500"></i>
+                    Командная карта доступности
+                </h3>
+                <div class="flex flex-wrap items-center gap-2">
+                    <label class="text-xs text-gray-500">Дата:</label>
+                    <input type="date" id="heatmap-date"
+                        class="text-sm border border-gray-300 rounded px-2 py-1.5 focus:outline-none focus:border-indigo-500">
+                    <button id="btn-heatmap-today" class="text-xs px-2 py-1.5 rounded border border-gray-300 hover:bg-gray-50">Сегодня</button>
+                    <button id="btn-heatmap-tomorrow" class="text-xs px-2 py-1.5 rounded border border-gray-300 hover:bg-gray-50">Завтра</button>
+                </div>
+            </div>
+
+            <!-- Легенда -->
+            <div class="flex flex-wrap items-center gap-3 text-xs text-gray-600 mb-4">
+                <span class="flex items-center gap-1"><span class="legend-cell legend-free"></span> свободен</span>
+                <span class="flex items-center gap-1"><span class="legend-cell legend-busy"></span> занят</span>
+                <span class="flex items-center gap-1"><span class="legend-cell legend-vacation"></span><i class="fa-solid fa-umbrella-beach text-yellow-500"></i> отпуск</span>
+                <span class="flex items-center gap-1"><span class="legend-cell legend-sick"></span><i class="fa-solid fa-briefcase-medical text-rose-500"></i> больничный</span>
+                <span class="flex items-center gap-1"><span class="legend-cell legend-off"></span> вне графика</span>
+                <span class="flex items-center gap-1"><span class="legend-cell legend-team"></span> командное окно</span>
+            </div>
+
+            <div id="heatmap-container" class="overflow-x-auto">
+                <div class="text-center text-gray-500 py-4">
+                    <i class="fa-solid fa-spinner fa-spin mr-2"></i>Загрузка карты...
+                </div>
+            </div>
+        </section>
+
+        <!-- ========== Основная сетка ========== -->
+        <section class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+            <div class="lg:col-span-2 space-y-6">
+                <!-- Плитка команды -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 flex flex-wrap items-center justify-between gap-3">
+                    <div class="flex items-center gap-3">
+                        <div class="team-tile-icon">
+                            <i class="fa-solid fa-people-group"></i>
+                        </div>
+                        <div>
+                            <div class="text-xs text-gray-500 uppercase">Команда</div>
+                            <div id="team-tile-name" class="text-xl font-bold text-gray-800">—</div>
+                            <div id="team-tile-meta" class="text-xs text-gray-400">сотрудников: —</div>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button id="team-tile-add-employee"
+                            class="text-sm bg-indigo-600 text-white px-3 py-2 rounded hover:bg-indigo-700 transition">
+                            <i class="fa-solid fa-user-plus mr-1"></i> Добавить сотрудника
+                        </button>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+                    <div class="flex flex-wrap items-center justify-between mb-4 gap-3">
+                        <h2 class="text-lg font-semibold border-l-4 border-indigo-500 pl-3">
+                            Команда: <span id="team-name" class="text-indigo-600">—</span>
+                        </h2>
+                        <div class="flex flex-wrap items-center gap-2">
+                            <input id="search-input" type="text" placeholder="Поиск по имени..."
+                                class="text-sm border border-gray-300 rounded px-3 py-1.5 focus:outline-none focus:border-indigo-500 w-44">
+                            <select id="risk-filter"
+                                class="text-sm border border-gray-300 rounded px-2 py-1.5 bg-white focus:outline-none focus:border-indigo-500">
+                                <option value="all">Все уровни риска</option>
+                                <option value="Низкий риск">Низкий</option>
+                                <option value="Средний риск">Средний</option>
+                                <option value="Высокий риск">Высокий</option>
+                                <option value="Критический риск">Критический</option>
+                            </select>
+                            <select id="format-filter"
+                                class="text-sm border border-gray-300 rounded px-2 py-1.5 bg-white focus:outline-none focus:border-indigo-500">
+                                <option value="all">Все форматы работы</option>
+                                <option value="office">Офис</option>
+                                <option value="remote">Удалёнка</option>
+                                <option value="hybrid">Гибрид</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div id="employees-container" class="space-y-4">
+                        <div class="text-center text-gray-500 py-4">
+                            <i class="fa-solid fa-spinner fa-spin mr-2"></i> Загрузка данных...
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="space-y-6">
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 border-t-4 border-t-indigo-500">
+                    <h3 class="text-md font-semibold mb-3 text-gray-700">
+                        <i class="fa-solid fa-calendar-check text-indigo-500 mr-2"></i>Командная доступность
+                    </h3>
+                    <p class="text-xs text-gray-500 mb-3">Рекомендованные окна для встреч всей команды:</p>
+                    <ul id="meeting-windows" class="space-y-2">
+                        <li class="text-sm text-gray-500">Загрузка...</li>
+                    </ul>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 flex flex-col h-[440px]">
+                    <h3 class="text-md font-semibold mb-3 text-gray-700 flex items-center gap-2">
+                        <i class="fa-solid fa-robot text-indigo-500"></i>
+                        AI-Ассистент
+                        <span id="ai-provider-badge" class="ml-auto text-[10px] font-medium px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 flex items-center gap-1">
+                            <span id="ai-status-dot" class="w-1.5 h-1.5 rounded-full bg-gray-300"></span>
+                            <span id="ai-status-text">проверка...</span>
+                        </span>
+                    </h3>
+
+                    <div id="chat-messages" class="flex-1 bg-gray-50 rounded border border-gray-200 p-3 overflow-y-auto mb-3 space-y-3">
+                        <div class="bg-white p-2 rounded shadow-sm text-sm border-l-2 border-indigo-400">
+                            Привет! Я ИИ-ассистент WorkTime Sync. Спроси меня, кто перегружен, у кого устарел график или когда лучше провести встречу.
+                        </div>
+                    </div>
+
+                    <div class="flex flex-wrap gap-1.5 mb-2" id="chat-suggestions">
+                        <button class="suggest-btn text-[11px] bg-indigo-50 text-indigo-600 px-2 py-1 rounded hover:bg-indigo-100" data-q="Кто перегружен?">Кто перегружен?</button>
+                        <button class="suggest-btn text-[11px] bg-indigo-50 text-indigo-600 px-2 py-1 rounded hover:bg-indigo-100" data-q="У кого устарел график?">Устаревший график</button>
+                        <button class="suggest-btn text-[11px] bg-indigo-50 text-indigo-600 px-2 py-1 rounded hover:bg-indigo-100" data-q="Когда провести встречу команды?">Окно для встречи</button>
+                    </div>
+
+                    <div class="flex gap-2">
+                        <input type="text" id="chat-input"
+                            class="flex-1 border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-indigo-500"
+                            placeholder="Например: кто перегружен?">
+                        <button id="btn-send-chat"
+                            class="bg-indigo-600 text-white px-3 py-2 rounded hover:bg-indigo-700 transition">
+                            <i class="fa-solid fa-paper-plane"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- ========== Модалка: добавить сотрудника ========== -->
+    <div id="modal-employee" class="hidden fixed inset-0 bg-black/40 z-40 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-lg p-6">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-semibold">Добавить сотрудника</h3>
+                <button class="modal-close text-gray-400 hover:text-gray-600" data-target="modal-employee">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <form id="form-employee" class="grid grid-cols-2 gap-3 text-sm">
+                <label class="col-span-2">
+                    <span class="text-gray-500 text-xs">Имя</span>
+                    <input name="name" required class="w-full border border-gray-300 rounded px-3 py-2 mt-1 focus:outline-none focus:border-indigo-500">
+                </label>
+                <label class="col-span-2">
+                    <span class="text-gray-500 text-xs">Email</span>
+                    <input name="email" type="email" required class="w-full border border-gray-300 rounded px-3 py-2 mt-1 focus:outline-none focus:border-indigo-500">
+                </label>
+                <label>
+                    <span class="text-gray-500 text-xs">Начало раб. дня</span>
+                    <input name="work_start" value="09:00" required class="w-full border border-gray-300 rounded px-3 py-2 mt-1 focus:outline-none focus:border-indigo-500">
+                </label>
+                <label>
+                    <span class="text-gray-500 text-xs">Конец раб. дня</span>
+                    <input name="work_end" value="18:00" required class="w-full border border-gray-300 rounded px-3 py-2 mt-1 focus:outline-none focus:border-indigo-500">
+                </label>
+                <label class="col-span-2">
+                    <span class="text-gray-500 text-xs">Рабочие дни (через запятую: mon,tue,wed,thu,fri)</span>
+                    <input name="work_days" value="mon,tue,wed,thu,fri" required class="w-full border border-gray-300 rounded px-3 py-2 mt-1 focus:outline-none focus:border-indigo-500">
+                </label>
+                <label>
+                    <span class="text-gray-500 text-xs">Часовой пояс</span>
+                    <input name="timezone" value="UTC+3" required class="w-full border border-gray-300 rounded px-3 py-2 mt-1 focus:outline-none focus:border-indigo-500">
+                </label>
+                <label>
+                    <span class="text-gray-500 text-xs">Формат работы</span>
+                    <select name="work_format" class="w-full border border-gray-300 rounded px-3 py-2 mt-1 bg-white focus:outline-none focus:border-indigo-500">
+                        <option value="office">Офис</option>
+                        <option value="remote">Удалёнка</option>
+                        <option value="hybrid">Гибрид</option>
+                    </select>
+                </label>
+                <div class="col-span-2 flex justify-end gap-2 mt-2">
+                    <button type="button" class="modal-close px-4 py-2 text-sm rounded border border-gray-300 hover:bg-gray-50" data-target="modal-employee">Отмена</button>
+                    <button type="submit" class="px-4 py-2 text-sm rounded bg-indigo-600 text-white hover:bg-indigo-700">Сохранить</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ========== Модалка: добавить событие ========== -->
+    <div id="modal-event" class="hidden fixed inset-0 bg-black/40 z-40 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-lg p-6">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-semibold">Добавить событие</h3>
+                <button class="modal-close text-gray-400 hover:text-gray-600" data-target="modal-event">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <form id="form-event" class="grid grid-cols-2 gap-3 text-sm">
+                <label class="col-span-2">
+                    <span class="text-gray-500 text-xs">Сотрудник</span>
+                    <select name="employee_id" required class="w-full border border-gray-300 rounded px-3 py-2 mt-1 bg-white focus:outline-none focus:border-indigo-500" id="event-employee-select"></select>
+                </label>
+                <label class="col-span-2">
+                    <span class="text-gray-500 text-xs">Название</span>
+                    <input name="title" required class="w-full border border-gray-300 rounded px-3 py-2 mt-1 focus:outline-none focus:border-indigo-500">
+                </label>
+                <label>
+                    <span class="text-gray-500 text-xs">Начало</span>
+                    <input name="start_time" type="datetime-local" required class="w-full border border-gray-300 rounded px-3 py-2 mt-1 focus:outline-none focus:border-indigo-500">
+                </label>
+                <label>
+                    <span class="text-gray-500 text-xs">Окончание</span>
+                    <input name="end_time" type="datetime-local" required class="w-full border border-gray-300 rounded px-3 py-2 mt-1 focus:outline-none focus:border-indigo-500">
+                </label>
+                <label>
+                    <span class="text-gray-500 text-xs">Тип события</span>
+                    <select name="event_type" class="w-full border border-gray-300 rounded px-3 py-2 mt-1 bg-white focus:outline-none focus:border-indigo-500">
+                        <option value="meeting">Встреча</option>
+                        <option value="task">Задача</option>
+                        <option value="vacation">Отпуск</option>
+                        <option value="sick_leave">Больничный</option>
+                    </select>
+                </label>
+                <label>
+                    <span class="text-gray-500 text-xs">Источник данных</span>
+                    <select name="source" class="w-full border border-gray-300 rounded px-3 py-2 mt-1 bg-white focus:outline-none focus:border-indigo-500">
+                        <option value="calendar">Календарь</option>
+                        <option value="hr_system">HR-система</option>
+                        <option value="task_tracker">Таск-трекер</option>
+                    </select>
+                </label>
+                <div class="col-span-2 flex justify-end gap-2 mt-2">
+                    <button type="button" class="modal-close px-4 py-2 text-sm rounded border border-gray-300 hover:bg-gray-50" data-target="modal-event">Отмена</button>
+                    <button type="submit" class="px-4 py-2 text-sm rounded bg-indigo-600 text-white hover:bg-indigo-700">Сохранить</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ========== Модалка: создать команду ========== -->
+    <div id="modal-team" class="hidden fixed inset-0 bg-black/40 z-40 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-semibold">Создать команду</h3>
+                <button class="modal-close text-gray-400 hover:text-gray-600" data-target="modal-team">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <form id="form-team" class="space-y-3 text-sm">
+                <label class="block">
+                    <span class="text-gray-500 text-xs">Название команды</span>
+                    <input name="name" required class="w-full border border-gray-300 rounded px-3 py-2 mt-1 focus:outline-none focus:border-indigo-500" placeholder="Например: Backend Development">
+                </label>
+                <div class="flex justify-end gap-2 pt-2">
+                    <button type="button" class="modal-close px-4 py-2 text-sm rounded border border-gray-300 hover:bg-gray-50" data-target="modal-team">Отмена</button>
+                    <button type="submit" class="px-4 py-2 text-sm rounded bg-indigo-600 text-white hover:bg-indigo-700">Создать</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ========== Модалка: случайный сотрудник ========== -->
+    <div id="modal-random" class="hidden fixed inset-0 bg-black/40 z-40 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-semibold">Сгенерировать случайного сотрудника</h3>
+                <button class="modal-close text-gray-400 hover:text-gray-600" data-target="modal-random">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <form id="form-random" class="space-y-3 text-sm">
+                <label class="block">
+                    <span class="text-gray-500 text-xs">Команда для нового сотрудника</span>
+                    <select name="team_id" id="random-team-select"
+                        class="w-full border border-gray-300 rounded px-3 py-2 mt-1 bg-white focus:outline-none focus:border-indigo-500"></select>
+                </label>
+                <p class="text-xs text-gray-500">
+                    Будут сгенерированы случайные ФИО, должность, формат работы, часовой пояс и календарные события.
+                </p>
+                <div class="flex justify-end gap-2 pt-2">
+                    <button type="button" class="modal-close px-4 py-2 text-sm rounded border border-gray-300 hover:bg-gray-50" data-target="modal-random">Отмена</button>
+                    <button type="submit" class="px-4 py-2 text-sm rounded bg-emerald-600 text-white hover:bg-emerald-700">
+                        <i class="fa-solid fa-dice mr-1"></i>Сгенерировать
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ========== Модалка: профиль сотрудника ========== -->
+    <div id="modal-profile" class="hidden fixed inset-0 bg-black/50 z-50 flex items-start justify-center p-4 overflow-y-auto">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-3xl my-8 overflow-hidden">
+            <!-- Шапка -->
+            <div id="profile-header" class="relative p-6 bg-gradient-to-br from-indigo-50 to-white border-b border-gray-100">
+                <button class="modal-close absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-xl" data-target="modal-profile">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+                <div id="profile-header-body" class="text-center text-gray-400 py-6">
+                    <i class="fa-solid fa-spinner fa-spin"></i> Загрузка профиля...
+                </div>
+            </div>
+            <!-- Тело -->
+            <div id="profile-body" class="p-6 space-y-6"></div>
+        </div>
+    </div>
+
+    <!-- ========== Поп-ап быстрого события ========== -->
+    <div id="quick-event-popover" class="hidden fixed z-50 bg-white rounded-xl shadow-2xl border border-gray-200 p-4 w-72">
+        <div class="flex items-center justify-between mb-2">
+            <h4 class="text-sm font-semibold text-gray-800">Добавить событие</h4>
+            <button id="quick-event-close" class="text-gray-400 hover:text-gray-600 text-sm"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <p id="quick-event-target" class="text-xs text-gray-500 mb-3">—</p>
+        <div class="grid grid-cols-2 gap-2">
+            <button class="quick-event-btn" data-type="vacation"><i class="fa-solid fa-umbrella-beach"></i><span>Отпуск</span></button>
+            <button class="quick-event-btn" data-type="sick_leave"><i class="fa-solid fa-briefcase-medical"></i><span>Больничный</span></button>
+            <button class="quick-event-btn" data-type="duty"><i class="fa-solid fa-shield-halved"></i><span>Дежурство</span></button>
+            <button class="quick-event-btn" data-type="day_off"><i class="fa-solid fa-mug-hot"></i><span>Отгул</span></button>
+        </div>
+    </div>
+
+    <!-- ========== Подтверждение «Освободить» ========== -->
+    <div id="modal-release" class="hidden fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
+            <h3 class="text-lg font-semibold mb-2">Освободить сотрудника?</h3>
+            <p class="text-sm text-gray-600 mb-4">
+                <span id="release-target-name" class="font-semibold">—</span> будет переведён в статус
+                <span class="text-emerald-700 font-semibold">«В резерве»</span> и исчезнет из текущей команды.
+                Вы сможете вернуть его позже из вкладки «В резерве».
+            </p>
+            <div class="flex justify-end gap-2">
+                <button class="modal-close px-4 py-2 text-sm rounded border border-gray-300 hover:bg-gray-50" data-target="modal-release">Отмена</button>
+                <button id="btn-release-confirm" class="px-4 py-2 text-sm rounded bg-amber-500 text-white hover:bg-amber-600">
+                    <i class="fa-solid fa-user-slash mr-1"></i>Освободить
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========== Тосты ========== -->
+    <div id="toast-container" class="fixed bottom-4 right-4 z-50 space-y-2"></div>
+</body>
+</html>

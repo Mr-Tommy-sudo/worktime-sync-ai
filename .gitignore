@@ -5,6 +5,8 @@ keys.txt
 # 2. База данных
 # Мы не пушим локальную базу, чтобы не затереть данные у других разработчиков
 worktime.db
+worktime_sync.db
+*.db
 *.sqlite
 *.sqlite3
 
